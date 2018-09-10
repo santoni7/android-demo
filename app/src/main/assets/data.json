@@ -1,0 +1,34 @@
+{
+  "employees": {
+    "person1": {
+      "firstName": "John",
+      "secondName": "Snow",
+      "avatar": "https://en.wikipedia.org/wiki/File:Jon_Snow-Kit_Harington.jpg",
+      "age": 25
+    },
+    "person2": {
+      "firstName": "Daenerys",
+      "secondName": "Targaryen",
+      "avatar": "https://en.wikipedia.org/wiki/File:Daenerys_Targaryen_with_Dragon-Emilia_Clarke.jpg",
+      "age": 25
+    },
+    "person3": {
+      "firstName": "Eddard",
+      "secondName": "Stark",
+      "avatar": "https://en.wikipedia.org/wiki/File:Ned_Stark-Sean_Bean.jpg",
+      "age": 45
+    },
+    "person4": {
+      "firstName": "Ygritte",
+      "secondName": "",
+      "avatar": "https://en.wikipedia.org/wiki/File:Ygritte-Rose_Leslie.jpg",
+      "age": 25
+    },
+    "person5": {
+      "firstName": "Jaime",
+      "secondName": "Lannister",
+      "avatar": "https://en.wikipedia.org/wiki/File:Jaime_Lannister-Nikolaj_Coster-Waldau.jpg",
+      "age": 30
+    }
+  }
+}

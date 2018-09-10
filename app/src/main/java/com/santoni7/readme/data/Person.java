@@ -1,4 +1,4 @@
-package com.santoni7.readme;
+package com.santoni7.readme.data;
 
 public class Person {
     private String id;
@@ -6,6 +6,10 @@ public class Person {
     private String secondName;
     private String avatarUrl;
     private int age;
+
+    public Person(){
+
+    }
 
     public Person(String id, String firstName, String secondName, String avatarUrl, int age){
         this.id = id;
