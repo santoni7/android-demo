@@ -20,8 +20,10 @@ public interface MainContract {
 
         void updatePerson(Person person);
 
+        void openDetailsScreen(Person person);
+
         //TODO: Remove, used for debug only
-        void showSnackbar(String text);
+        void makeToast(String text);
 
         InputStream openAssetFile(String fileName) throws IOException;
     }

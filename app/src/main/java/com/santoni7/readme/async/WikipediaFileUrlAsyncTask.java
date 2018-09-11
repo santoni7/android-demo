@@ -15,14 +15,13 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.annotations.NonNull;
-
+/**
+ * An async task, used to get real image URL by Wiki File Name with Wikipedia API
+ */
 public class WikipediaFileUrlAsyncTask extends AsyncTask<String, Void, String> {
     private static final String TAG = WikipediaFileUrlAsyncTask.class.getSimpleName();
-    private static final String API_BASE = "https://en.wikipedia.org/w/api.php?";
-    private static final String QUERY_FORMAT = "action=query&titles=File:%s&prop=imageinfo&iiprop=url&format=json";
+//    private static final String API_BASE = "https://en.wikipedia.org/w/api.php?";
+    private static final String API_QUERY_FORMAT = "https://en.wikipedia.org/w/api.php?action=query&titles=File:%s&prop=imageinfo&iiprop=url&format=json";
 
     private ResultListener listener;
     public WikipediaFileUrlAsyncTask(ResultListener listener){
@@ -31,8 +30,6 @@ public class WikipediaFileUrlAsyncTask extends AsyncTask<String, Void, String> {
 
     @Override
     protected String doInBackground(String... strings) {
-//        for(String wikiFileName: strings) {
-//        }
         String wikiFileName = strings[0];
         Log.d(TAG, "Started task in background for wikiFileName="+wikiFileName);
         if(wikiFileName == null) return null;
@@ -74,14 +71,8 @@ public class WikipediaFileUrlAsyncTask extends AsyncTask<String, Void, String> {
     }
 
 
-//    @Override
-//    protected void onPostExecute(Observable<String> stringObservable) {
-//        super.onPostExecute(stringObservable);
-//        stringObservable.subscribe(observer);
-//    }
-
     private URL makeQueryURL(String fileName) throws MalformedURLException {
-        return new URL(API_BASE + String.format(QUERY_FORMAT, fileName));
+        return new URL(String.format(API_QUERY_FORMAT, fileName));
     }
 
     private String getFileUrl(String jsonResponse) throws JSONException {

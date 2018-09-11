@@ -14,7 +14,11 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.ReplaySubject;
 import io.reactivex.subjects.Subject;
 
-public class ImageRepository {
+/**
+ * A singleton class which is responsible for getting real image URL (instead of Wikipedia file page),
+ * and saving it to device.
+ */
+public class ImageRepository implements Disposable {
     private static ImageRepository _instance = null;
 
     public static ImageRepository instance() {
@@ -24,17 +28,29 @@ public class ImageRepository {
         return _instance;
     }
 
-    private CompositeDisposable compositeDisposable = new CompositeDisposable();
+    /**
+     * CompositeDisposable of all subscriptions, in order to dispose them (in dispose() method)
+     */
+    private CompositeDisposable subscriptions = new CompositeDisposable();
 
+    /**
+     * A map of Person's avatar file URL, after getting it from Wikipedia API
+     * Key: Person ID;  Value: Real avatar URL
+     */
     private HashMap<String, String> fileUrlByPerson = new HashMap<>();
 
-    private ReplaySubject<Pair<Person, String>> fixedUrlSubject = ReplaySubject.create();
+    /**
+     * A source of pair Person-Avatar URL as Avatar URL is gotten from WikiApi
+     * Pair first: Person ID; Pair second: Avatar URL
+     */
+    private ReplaySubject<Pair<Person, String /* Avatar URL */>> realUrlSource = ReplaySubject.create();
 
     private ImageRepository() {
-        Disposable d = fixedUrlSubject.subscribe(pair ->
+        Disposable d = realUrlSource.subscribe(pair ->
+                // Save
                 fileUrlByPerson.put(pair.first.getId(), pair.second)
         );
-        compositeDisposable.add(d);
+        subscriptions.add(d);
     }
 
 
@@ -42,33 +58,53 @@ public class ImageRepository {
         return fileUrlByPerson.get(personID);
     }
 
-    public void addPersonImage(final Person person) {
+    /**
+     * Check if Person's Avatar URL points to Wikimedia Page instead of plain image:
+     * If so, real file URL is fetched from Wikipedia API and `realUrlSource` observable gets
+     * notified about result;
+     * Else, if URL is already a file URL, it gets to `realUrlSource` unmodified
+     *
+     * @param person
+     */
+    public void fetchPersonImage(final Person person) {
         String avatarUrl = person.getAvatarUrl();
         Pattern p = Pattern.compile("https?://.+\\.wikipedia.org/wiki/File:(.+)");
         Matcher m = p.matcher(avatarUrl);
         if (m.matches()) {
             MatchResult res = m.toMatchResult();
-            String wikiFile = res.group(1);
-            // Start AsyncTask to get final image url
+            String wikiFile = res.group(1); // Name of file at WikiMedia, used in API-call
+
+            // Start AsyncTask to get final image url from Wiki API
             new WikipediaFileUrlAsyncTask(new WikipediaFileUrlAsyncTask.ResultListener() {
                 @Override
                 public void onSuccess(String fileURL) {
-                    fixedUrlSubject.onNext(new Pair<>(person, fileURL));
+                    realUrlSource.onNext(new Pair<>(person, fileURL));
                 }
 
                 @Override
                 public void onError() {
-                    fixedUrlSubject.onNext(new Pair<>(person, "ERROR"));
+                    realUrlSource.onNext(new Pair<>(person, "ERROR"));
+                    //todo error reporting
                 }
             }).execute(wikiFile);
 
         } else {
-            fixedUrlSubject.onNext(new Pair<>(person, avatarUrl));
+            realUrlSource.onNext(new Pair<>(person, avatarUrl));
         }
     }
 
 
-    public Subject<Pair<Person, String>> getFixedUrlSubject() {
-        return fixedUrlSubject;
+    public ReplaySubject<Pair<Person, String>> getRealUrlSource() {
+        return realUrlSource;
+    }
+
+    @Override
+    public void dispose() {
+        subscriptions.clear();
+    }
+
+    @Override
+    public boolean isDisposed() {
+        return false;
     }
 }

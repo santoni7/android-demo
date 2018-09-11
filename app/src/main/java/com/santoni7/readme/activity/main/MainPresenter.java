@@ -1,5 +1,7 @@
 package com.santoni7.readme.activity.main;
 
+import android.util.Log;
+
 import com.santoni7.readme.common.PresenterBase;
 import com.santoni7.readme.data.ImageRepository;
 import com.santoni7.readme.data.Person;
@@ -7,11 +9,9 @@ import com.santoni7.readme.data.PersonRepository;
 import com.santoni7.readme.util.TextUtils;
 
 import java.io.IOException;
-import java.util.List;
 
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.observers.DefaultObserver;
 
 public class MainPresenter extends PresenterBase<MainContract.View> implements MainContract.Presenter {
     private static final String TAG = MainPresenter.class.getSimpleName();
@@ -24,35 +24,36 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
         getView().hideProgressOverlay();
     }
 
-    private List<Person> people;
 
     private void readData() {
-        // todo check if view is attached
+        if(!isViewAttached())
+            return;
         final PersonRepository personRepo = PersonRepository.instance();
         final ImageRepository imageRepo = ImageRepository.instance();
         try {
+            getView().showProgressOverlay();
             String json = TextUtils.readStringFromStream(getView().openAssetFile("data.json"));
-            if (json.isEmpty()) return;
+            if (json.isEmpty()) {
+                getView().hideProgressOverlay();
+                return; //todo error reporting
+            }
 
-            personRepo.updateData(json, new DefaultObserver<Person>() {
-                @Override
-                public void onNext(Person person) {
-                    imageRepo.addPersonImage(person);
-                    getView().addPerson(person);
-                }
+            Disposable d = personRepo.updateData(json).subscribe(
+                    // onNext
+                    person -> {
+                        imageRepo.fetchPersonImage(person);
+                        getView().addPerson(person);
+                    },
+                    // onError
+                    err -> Log.e(TAG, "Error while parsing data: " + err),
+                    // onComplete
+                    () -> {
+                        getView().hideProgressOverlay();
+                    }
+            );
+            compositeDisposable.add(d);
 
-                @Override
-                public void onError(Throwable e) {
-
-                }
-
-                @Override
-                public void onComplete() {
-                    people = personRepo.getPersonList();
-                }
-            });
-
-            Disposable d = imageRepo.getFixedUrlSubject()
+            d = imageRepo.getRealUrlSource()
                     .subscribe(personStringPair ->
                             getView().updatePerson(personStringPair.first)
                     );
@@ -65,6 +66,6 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
 
     @Override
     public void onListItemClicked(Person p) {
-        getView().showSnackbar(p.getFirstName());
+        getView().openDetailsScreen(p);
     }
 }
