@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.reactivex.disposables.Disposable;
+
 public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAdapter.ViewHolder> {
     private static final String TAG = PersonRecyclerAdapter.class.getSimpleName();
 
@@ -28,24 +30,26 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
         this.clickListener = clickListener;
     }
 
-    public void addPerson(Person p){
+    public void addPerson(Person p) {
         people.add(p);
         notifyDataSetChanged();
     }
 
-    public void updateViewHolder(Person person){
+    public void updatePerson(Person person) {
         ViewHolder vh = viewHolderById.get(person.getId());
-        if(vh != null){
+        if (vh != null) {
             vh.updateImage(person);
+        } else {
+            // todo
         }
     }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.list_item, parent, false);
-        ViewHolder viewHolder = new ViewHolder(itemView);
-        return viewHolder;
+        return new ViewHolder(itemView);
     }
 
     @Override
@@ -62,20 +66,20 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
     }
 
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder extends RecyclerView.ViewHolder {
 
         private View itemView;
         private TextView txtName;
         private ImageView imgAvatar;
 
-        public ViewHolder(@NonNull View itemView) {
+        ViewHolder(@NonNull View itemView) {
             super(itemView);
             this.itemView = itemView;
             this.txtName = itemView.findViewById(R.id.txtName);
             this.imgAvatar = itemView.findViewById(R.id.imgAvatar);
         }
 
-        public void bind(final Person person, final OnItemClickListener clickListener) {
+        void bind(final Person person, final OnItemClickListener clickListener) {
             String nameString = person.getFirstName() + " " + person.getSecondName();
             txtName.setText(nameString);
             //TODO: Replace with custom image processing
@@ -89,17 +93,16 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
             });
         }
 
-        public void updateImage(Person person) {
-//            String imgUrl = ImageRepository.instance().getImageUrl(person.getId());
-//            if(imgUrl != null) {
-//                Picasso.get()
-//                        .load(Uri.parse(imgUrl))
-//                        //.resize(44, 44)
-//                        .fit()
-//                        .centerCrop()
-//                        .into(imgAvatar);
-//            }
+        void updateImage(Person person) {
+            if (person.getImageSource() != null) {
+                Disposable subscription = person.getImageSource()
+                        .subscribe(img -> imgAvatar.setImageBitmap(img),
+                                err -> {
+                                    //todo
+                                });
+            }
         }
+
     }
 
     public interface OnItemClickListener {

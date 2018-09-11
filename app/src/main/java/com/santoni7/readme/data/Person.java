@@ -1,5 +1,12 @@
 package com.santoni7.readme.data;
 
+import android.graphics.Bitmap;
+
+import io.reactivex.Observable;
+
+/**
+ * A POJO-class that represents a person and stores it's properties
+ */
 public class Person {
     private String id;
     private String firstName;
@@ -7,24 +14,12 @@ public class Person {
     private String avatarUrl;
     private int age;
 
-    public Person(){
 
-    }
+    private String imageFileName;
+    private Observable<Bitmap> imageSource;
 
-    public Person(String id, String firstName, String secondName, String avatarUrl, int age){
-        this.id = id;
-        this.firstName = firstName;
-        this.secondName = secondName;
-        this.avatarUrl = avatarUrl;
-        this.age = age;
-    }
+    public Person() {
 
-    public Person(Person person){
-        this.id = person.id;
-        this.firstName = person.firstName;
-        this.secondName = person.secondName;
-        this.avatarUrl = person.avatarUrl;
-        this.age = person.age;
     }
 
     public String getId() {
@@ -69,5 +64,21 @@ public class Person {
 
     public String getFullName() {
         return getFirstName() + " " + getSecondName();
+    }
+
+    public String getImageFileName() {
+        return imageFileName;
+    }
+
+    public void setImageFileName(String imageFileName) {
+        this.imageFileName = imageFileName;
+    }
+
+    public Observable<Bitmap> getImageSource() {
+        return imageSource;
+    }
+
+    public void setImageSource(Observable<Bitmap> imageSource) {
+        this.imageSource = imageSource;
     }
 }

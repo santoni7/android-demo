@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+/**
+ * Helper class with static utility methods, related with text processing
+ */
 public class TextUtils {
     public static String readStringFromStream(InputStream inputStream) throws IOException {
         StringBuilder result = new StringBuilder();

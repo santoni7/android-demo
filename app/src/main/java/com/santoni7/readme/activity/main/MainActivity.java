@@ -6,22 +6,18 @@ import android.os.Bundle;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import com.santoni7.readme.activity.details.DetailsActivity;
-import com.santoni7.readme.data.ImageRepository;
+import com.santoni7.readme.data.PersonImageRepository;
 import com.santoni7.readme.data.Person;
 import com.santoni7.readme.adapter.PersonRecyclerAdapter;
 import com.santoni7.readme.R;
-import com.santoni7.readme.data.PersonRepository;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MainContract.View, PersonRecyclerAdapter.OnItemClickListener {
     private final String TAG = MainActivity.class.getSimpleName();
@@ -34,7 +30,6 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
         setContentView(R.layout.activity_main);
         initView();
 
@@ -44,49 +39,33 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     }
 
     private void initView() {
+        if(getSupportActionBar() != null){
+            getSupportActionBar().setTitle(R.string.main_activity_title);
+        }
+
         this.progressBar = findViewById(R.id.progressBar);
 
-        //Init RecyclerView:
         this.recyclerView = findViewById(R.id.recyclerView);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
         DividerItemDecoration dividerDecoration = new DividerItemDecoration(this, layoutManager.getOrientation());
         recyclerView.addItemDecoration(dividerDecoration);
-    }
 
-    @Override
-    public void showProgressOverlay() {
-        Log.d(TAG, "showProgressOverlay");
-        progressBar.setVisibility(View.VISIBLE);
-        progressBar.bringToFront();
-    }
-
-    @Override
-    public void hideProgressOverlay() {
-        Log.d(TAG, "hideProgressOverlay");
-//        progressBar.setVisibility(View.GONE);
-        //TODO
-    }
-
-    @Override
-    public void displayPersonList(List<Person> people) {
-        Log.d(TAG, "displayPersonList(): People count = " + people.size());
-        adapter = new PersonRecyclerAdapter(people, this);
+        adapter = new PersonRecyclerAdapter(new ArrayList<>(), this);
         recyclerView.setAdapter(adapter);
     }
 
+
+
     @Override
     public void addPerson(Person person) {
-        if (adapter == null) {
-            displayPersonList(new ArrayList<>());
-        }
         adapter.addPerson(person);
     }
 
     @Override
     public void updatePerson(Person person) {
         if (adapter != null) {
-            adapter.updateViewHolder(person);
+            adapter.updatePerson(person);
         }
     }
 
@@ -109,14 +88,19 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     }
 
     @Override
-    public void makeToast(String text) {
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+    public void showProgressOverlay() {
+        progressBar.setVisibility(View.VISIBLE);
+        progressBar.bringToFront();
+    }
+
+    @Override
+    public void hideProgressOverlay() {
+        progressBar.setVisibility(View.GONE);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        PersonRepository.instance().dispose();
-        ImageRepository.instance().dispose();
+        PersonImageRepository.instance().dispose();
     }
 }
