@@ -14,6 +14,7 @@ import com.santoni7.readme.util.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements MainContract.View, PersonRecyclerAdapter.OnItemClickListener {
@@ -22,6 +23,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     private MainPresenter presenter;
 
     private RecyclerView recyclerView;
+    private PersonRecyclerAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,8 +62,20 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     @Override
     public void displayPersonList(List<Person> people) {
         log.i("displayPersonList", "People count: " + people.size());
-        PersonRecyclerAdapter adapter = new PersonRecyclerAdapter(people, this);
+        adapter = new PersonRecyclerAdapter(people, this);
         recyclerView.setAdapter(adapter);
+    }
+
+    @Override
+    public void addPerson(Person person) {
+        if(adapter == null)
+            displayPersonList(new ArrayList<>());
+        adapter.addPerson(person);
+    }
+
+    @Override
+    public void updatePerson(Person person) {
+        adapter.updateViewHolder(person);
     }
 
     @Override

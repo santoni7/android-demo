@@ -3,6 +3,7 @@ package com.santoni7.readme.adapter;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,15 +11,21 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.santoni7.readme.R;
+import com.santoni7.readme.data.ImageRepository;
 import com.santoni7.readme.data.Person;
 import com.squareup.picasso.Picasso;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAdapter.ViewHolder> {
+    private static final String TAG = PersonRecyclerAdapter.class.getSimpleName();
 
     private List<Person> people;
 
+    private Map<String, ViewHolder> viewHolderById = new HashMap<>();
     private OnItemClickListener clickListener;
 
     public PersonRecyclerAdapter(List<Person> people, OnItemClickListener clickListener) {
@@ -26,6 +33,17 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
         this.clickListener = clickListener;
     }
 
+    public void addPerson(Person p){
+        people.add(p);
+        notifyDataSetChanged();
+    }
+
+    public void updateViewHolder(Person person){
+        ViewHolder vh = viewHolderById.get(person.getId());
+        if(vh != null){
+            vh.updateImage(person);
+        }
+    }
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -37,15 +55,19 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
-        viewHolder.bind(people.get(position), clickListener);
+        Person p = people.get(position);
+        viewHolder.bind(p, clickListener);
+        viewHolderById.put(p.getId(), viewHolder);
     }
+
 
     @Override
     public int getItemCount() {
         return people.size();
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder {
+
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         private View itemView;
         private TextView txtName;
@@ -62,20 +84,26 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
             String nameString = person.getFirstName() + " " + person.getSecondName();
             txtName.setText(nameString);
             //TODO: Replace with custom image processing
-            Picasso.get()
-                    .load(Uri.parse(person.getAvatarUrl()))
-                    .resize(44, 44)
-                    .centerCrop()
-                    .into(imgAvatar);
 
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (clickListener != null) {
-                        clickListener.onItemClick(person);
-                    }
+            updateImage(person);
+
+            itemView.setOnClickListener(view -> {
+                if (clickListener != null) {
+                    clickListener.onItemClick(person);
                 }
             });
+        }
+
+        public void updateImage(Person person) {
+            String imgUrl = ImageRepository.instance().getImageUrl(person.getId());
+            if(imgUrl != null) {
+                Picasso.get()
+                        .load(Uri.parse(imgUrl))
+                        //.resize(44, 44)
+                        .fit()
+                        .centerCrop()
+                        .into(imgAvatar);
+            }
         }
     }
 

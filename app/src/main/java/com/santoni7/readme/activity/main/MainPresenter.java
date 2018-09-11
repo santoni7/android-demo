@@ -1,26 +1,22 @@
 package com.santoni7.readme.activity.main;
 
-import android.util.Log;
-
-import com.santoni7.readme.async.WikipediaFileUrlAsyncTask;
 import com.santoni7.readme.common.PresenterBase;
 import com.santoni7.readme.data.ImageRepository;
 import com.santoni7.readme.data.Person;
-import com.santoni7.readme.data.PersonJsonParser;
 import com.santoni7.readme.data.PersonRepository;
-import com.santoni7.readme.util.Logger;
 import com.santoni7.readme.util.TextUtils;
-
-import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.List;
 
-import io.reactivex.functions.Consumer;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.DefaultObserver;
 
 public class MainPresenter extends PresenterBase<MainContract.View> implements MainContract.Presenter {
     private static final String TAG = MainPresenter.class.getSimpleName();
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
+
     @Override
     public void viewReady() {
         getView().showProgressOverlay();
@@ -28,16 +24,21 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
         getView().hideProgressOverlay();
     }
 
-    private void readData(){
+    private List<Person> people;
+
+    private void readData() {
         // todo check if view is attached
+        final PersonRepository personRepo = PersonRepository.instance();
+        final ImageRepository imageRepo = ImageRepository.instance();
         try {
             String json = TextUtils.readStringFromStream(getView().openAssetFile("data.json"));
-            //List<Person> people = PersonJsonParser.parseEmployees(json);
-            if(json.isEmpty()) return;
-            PersonRepository.instance().updateData(json, new DefaultObserver<Person>() {
+            if (json.isEmpty()) return;
+
+            personRepo.updateData(json, new DefaultObserver<Person>() {
                 @Override
                 public void onNext(Person person) {
-                    ImageRepository.instance().addPersonImage(person);
+                    imageRepo.addPersonImage(person);
+                    getView().addPerson(person);
                 }
 
                 @Override
@@ -47,12 +48,17 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
 
                 @Override
                 public void onComplete() {
-
+                    people = personRepo.getPersonList();
                 }
             });
-            getView().displayPersonList(PersonRepository.instance().getPersonList());
-        }
-        catch (IOException e){
+
+            Disposable d = imageRepo.getFixedUrlSubject()
+                    .subscribe(personStringPair ->
+                            getView().updatePerson(personStringPair.first)
+                    );
+            compositeDisposable.add(d);
+
+        } catch (IOException e) {
             e.fillInStackTrace();
         }
     }

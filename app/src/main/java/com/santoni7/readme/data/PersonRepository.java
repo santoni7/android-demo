@@ -12,10 +12,11 @@ import java.util.List;
 import io.reactivex.Observer;
 import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.DefaultObserver;
 import io.reactivex.subjects.ReplaySubject;
 
-public class PersonRepository {
+public class PersonRepository implements Disposable {
     private static String TAG = PersonRepository.class.getSimpleName();
     private static PersonRepository _instance = null;
     public static PersonRepository instance(){
@@ -26,32 +27,22 @@ public class PersonRepository {
     }
     private PersonRepository() {    }
 
+    private boolean isDisposed = false;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
-    private List<Person> personList = new ArrayList<>();
+    private List<Person> personList;
 
     public void updateData(String json, @Nullable Observer<Person> observer){
+        personList = new ArrayList<>();
+        isDisposed = false;
         ReplaySubject<Person> personSubject = ReplaySubject.create();
-        Observer<Person> personSubjectObserver = new DefaultObserver<Person>() {
-            @Override
-            public void onNext(Person person) {
-                Log.d(TAG, "personSubjectObserver.onNext: person.id=" + person.getId());
-                personList.add(person);
-            }
 
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "personSubjectObserver.onError: " + e);
-            }
+        Disposable d = personSubject.subscribe(
+                person -> personList.add(person),
+                e -> Log.d(TAG, "PersonSubject error: " + e)
+        );
+        compositeDisposable.add(d);
 
-            @Override
-            public void onComplete() {
-                Log.d(TAG, "personSubjectObserver.onComplete");
-            }
-        };
-
-
-        personSubject.subscribe(personSubjectObserver);
         if(observer != null){
             personSubject.subscribe(observer);
         }
@@ -78,10 +69,17 @@ public class PersonRepository {
         return personList;
     }
 
-    public void onDestroy(){
+
+
+    @Override
+    public void dispose() {
+        isDisposed = true;
         compositeDisposable.clear();
+        personList = null;
     }
 
-
-
+    @Override
+    public boolean isDisposed() {
+        return isDisposed;
+    }
 }
