@@ -19,6 +19,14 @@ public class Person {
         this.age = age;
     }
 
+    public Person(Person person){
+        this.id = person.id;
+        this.firstName = person.firstName;
+        this.secondName = person.secondName;
+        this.avatarUrl = person.avatarUrl;
+        this.age = person.age;
+    }
+
     public String getId() {
         return id;
     }

@@ -1,9 +1,7 @@
 package com.santoni7.readme.adapter;
 
-import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,11 +9,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.santoni7.readme.R;
-import com.santoni7.readme.data.ImageRepository;
 import com.santoni7.readme.data.Person;
-import com.squareup.picasso.Picasso;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,15 +90,15 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
         }
 
         public void updateImage(Person person) {
-            String imgUrl = ImageRepository.instance().getImageUrl(person.getId());
-            if(imgUrl != null) {
-                Picasso.get()
-                        .load(Uri.parse(imgUrl))
-                        //.resize(44, 44)
-                        .fit()
-                        .centerCrop()
-                        .into(imgAvatar);
-            }
+//            String imgUrl = ImageRepository.instance().getImageUrl(person.getId());
+//            if(imgUrl != null) {
+//                Picasso.get()
+//                        .load(Uri.parse(imgUrl))
+//                        //.resize(44, 44)
+//                        .fit()
+//                        .centerCrop()
+//                        .into(imgAvatar);
+//            }
         }
     }
 

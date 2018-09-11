@@ -18,4 +18,8 @@ public class TextUtils {
             return result.toString();
         }
     }
+
+    public static String getFileNameFromURL(String url){
+        return url.substring(url.lastIndexOf('/') + 1);
+    }
 }

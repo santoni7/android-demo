@@ -15,24 +15,32 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import io.reactivex.subjects.AsyncSubject;
+
 /**
  * An async task, used to get real image URL by Wiki File Name with Wikipedia API
  */
-public class WikipediaFileUrlAsyncTask extends AsyncTask<String, Void, String> {
+public class WikipediaFileUrlAsyncTask extends AsyncTask<String, Void, String> implements ReactiveAsyncTask<String> {
     private static final String TAG = WikipediaFileUrlAsyncTask.class.getSimpleName();
-//    private static final String API_BASE = "https://en.wikipedia.org/w/api.php?";
     private static final String API_QUERY_FORMAT = "https://en.wikipedia.org/w/api.php?action=query&titles=File:%s&prop=imageinfo&iiprop=url&format=json";
 
-    private ResultListener listener;
-    public WikipediaFileUrlAsyncTask(ResultListener listener){
-        this.listener = listener;
+    private AsyncSubject<String> urlSource = AsyncSubject.create();
+
+    /**
+     * Save exception, thrown during execution, in order to pass it to observers
+     */
+    private Throwable thrownException = null;
+
+    @Override
+    public AsyncSubject<String> getResultSource() {
+        return urlSource;
     }
 
     @Override
     protected String doInBackground(String... strings) {
         String wikiFileName = strings[0];
-        Log.d(TAG, "Started task in background for wikiFileName="+wikiFileName);
-        if(wikiFileName == null) return null;
+        Log.d(TAG, "Started task in background for wikiFileName=" + wikiFileName);
+        if (wikiFileName == null) return null;
         HttpURLConnection connection = null;
         try {
             URL url = makeQueryURL(wikiFileName);
@@ -49,6 +57,7 @@ public class WikipediaFileUrlAsyncTask extends AsyncTask<String, Void, String> {
             return fileUrl;
 
         } catch (IOException | JSONException e) {
+            thrownException = e;
             e.printStackTrace();
         } finally {
             if (connection != null) {
@@ -59,14 +68,14 @@ public class WikipediaFileUrlAsyncTask extends AsyncTask<String, Void, String> {
 
     }
 
-        @Override
+    @Override
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
-        if(listener == null) return;
         if(result == null || result.isEmpty()){
-            listener.onError();
+            urlSource.onError(thrownException);
         } else {
-            listener.onSuccess(result);
+            urlSource.onNext(result);
+            urlSource.onComplete();
         }
     }
 
@@ -86,10 +95,5 @@ public class WikipediaFileUrlAsyncTask extends AsyncTask<String, Void, String> {
             return imageInfo.getString("url");
         }
         return null;
-    }
-
-    public interface ResultListener {
-        void onSuccess(String fileURL);
-        void onError();
     }
 }
