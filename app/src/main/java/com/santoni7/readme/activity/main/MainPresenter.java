@@ -7,6 +7,7 @@ import com.santoni7.readme.common.PresenterBase;
 import com.santoni7.readme.data.ImageRepository;
 import com.santoni7.readme.data.Person;
 import com.santoni7.readme.data.PersonJsonParser;
+import com.santoni7.readme.data.PersonRepository;
 import com.santoni7.readme.util.Logger;
 import com.santoni7.readme.util.TextUtils;
 
@@ -14,6 +15,9 @@ import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.List;
+
+import io.reactivex.functions.Consumer;
+import io.reactivex.observers.DefaultObserver;
 
 public class MainPresenter extends PresenterBase<MainContract.View> implements MainContract.Presenter {
     private static final String TAG = MainPresenter.class.getSimpleName();
@@ -28,11 +32,27 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
         // todo check if view is attached
         try {
             String json = TextUtils.readStringFromStream(getView().openAssetFile("data.json"));
-            List<Person> people = PersonJsonParser.parseEmployees(json);
+            //List<Person> people = PersonJsonParser.parseEmployees(json);
+            if(json.isEmpty()) return;
+            PersonRepository.instance().updateData(json, new DefaultObserver<Person>() {
+                @Override
+                public void onNext(Person person) {
+                    ImageRepository.instance().addPersonImage(person);
+                }
 
-            getView().displayPersonList(people);
+                @Override
+                public void onError(Throwable e) {
+
+                }
+
+                @Override
+                public void onComplete() {
+
+                }
+            });
+            getView().displayPersonList(PersonRepository.instance().getPersonList());
         }
-        catch (IOException | JSONException e){
+        catch (IOException e){
             e.fillInStackTrace();
         }
     }
