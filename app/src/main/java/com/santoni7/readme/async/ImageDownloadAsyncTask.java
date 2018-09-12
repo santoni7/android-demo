@@ -43,7 +43,7 @@ public class ImageDownloadAsyncTask extends AsyncTask<String, Void, Bitmap> impl
             inputStream = url.openConnection().getInputStream();
             img = BitmapFactory.decodeStream(inputStream);
 
-            Log.e(TAG, "Bitmap successfully downloaded");
+            Log.d(TAG, "Bitmap successfully downloaded");
             return img;
         } catch (IOException e) {
             exception = e;

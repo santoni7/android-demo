@@ -1,11 +1,16 @@
 package com.santoni7.readme.adapter;
 
+import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.santoni7.readme.R;
@@ -15,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAdapter.ViewHolder> {
@@ -25,8 +31,10 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
     private Map<String, ViewHolder> viewHolderById = new HashMap<>();
     private OnItemClickListener clickListener;
 
-    public PersonRecyclerAdapter(List<Person> people, OnItemClickListener clickListener) {
-        this.people = people;
+    private CompositeDisposable disposables = new CompositeDisposable();
+
+    public PersonRecyclerAdapter(List<Person> peopleList, OnItemClickListener clickListener) {
+        people = peopleList;
         this.clickListener = clickListener;
     }
 
@@ -37,10 +45,19 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
 
     public void updatePerson(Person person) {
         ViewHolder vh = viewHolderById.get(person.getId());
+
+        // Replace old Person object with new
+        for (int i = 0; i < people.size(); ++i) {
+            if (people.get(i).getId().equals(person.getId())) {
+                people.remove(i);
+                people.add(i, person);
+            }
+        }
         if (vh != null) {
             vh.updateImage(person);
         } else {
             // todo
+            Log.d(TAG, "updatePerson(id=" + person.getId() + "): ViewHolder is not found in map!");
         }
     }
 
@@ -48,7 +65,7 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.list_item, parent, false);
+                .inflate(R.layout.list_card_item, parent, false);
         return new ViewHolder(itemView);
     }
 
@@ -59,53 +76,69 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
         viewHolderById.put(p.getId(), viewHolder);
     }
 
-
     @Override
     public int getItemCount() {
         return people.size();
     }
 
+    public void dispose() {
+        disposables.dispose();
+    }
+
+    public interface OnItemClickListener {
+        void onItemClick(Person p);
+    }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-
-        private View itemView;
+        private CardView cardView;
         private TextView txtName;
         private ImageView imgAvatar;
+        private ProgressBar progressBar;
+        private FrameLayout imageContainer;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
-            this.itemView = itemView;
+            this.imageContainer = itemView.findViewById(R.id.imageContainer);
+            this.cardView = itemView.findViewById(R.id.card_view);
             this.txtName = itemView.findViewById(R.id.txtName);
             this.imgAvatar = itemView.findViewById(R.id.imgAvatar);
+            this.progressBar = itemView.findViewById(R.id.progressBar);
         }
 
         void bind(final Person person, final OnItemClickListener clickListener) {
             String nameString = person.getFirstName() + " " + person.getSecondName();
             txtName.setText(nameString);
-            //TODO: Replace with custom image processing
 
             updateImage(person);
 
-            itemView.setOnClickListener(view -> {
+            cardView.setOnClickListener(view -> {
                 if (clickListener != null) {
                     clickListener.onItemClick(person);
                 }
             });
+
         }
 
         void updateImage(Person person) {
+            Log.d(TAG, "updateImage: id=" + person.getId());
             if (person.getImageSource() != null) {
-                Disposable subscription = person.getImageSource()
-                        .subscribe(img -> imgAvatar.setImageBitmap(img),
+                Disposable d = person.getImageSource()
+                        .subscribe(this::onBitmapReady,
                                 err -> {
                                     //todo
+                                    Log.e(TAG, "person.getImageSource produced error: " + err);
                                 });
+                disposables.add(d);
+            } else {
+                Log.e(TAG, String.format("person.getImageSource() == null:\n\t\t{id: %s, full_name: %s, image_source: %s}",
+                        person.getId(), person.getFullName(), person.getImageSource()));
             }
         }
 
-    }
-
-    public interface OnItemClickListener {
-        void onItemClick(Person p);
+        private void onBitmapReady(Bitmap bitmap) {
+            Log.d(TAG, "onBitmapReady");
+            progressBar.setVisibility(View.GONE);
+            imgAvatar.setImageBitmap(bitmap);
+        }
     }
 }

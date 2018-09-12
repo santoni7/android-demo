@@ -4,9 +4,6 @@ import android.graphics.Bitmap;
 
 import io.reactivex.Observable;
 
-/**
- * A POJO-class that represents a person and stores it's properties
- */
 public class Person {
     private String id;
     private String firstName;
@@ -63,7 +60,7 @@ public class Person {
     }
 
     public String getFullName() {
-        return getFirstName() + " " + getSecondName();
+        return (getFirstName() + " " + getSecondName()).trim();
     }
 
     public String getImageFileName() {

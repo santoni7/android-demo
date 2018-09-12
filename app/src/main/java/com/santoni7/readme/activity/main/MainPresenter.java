@@ -2,9 +2,9 @@ package com.santoni7.readme.activity.main;
 
 import com.santoni7.readme.Constants;
 import com.santoni7.readme.common.PresenterBase;
-import com.santoni7.readme.data.PersonImageRepository;
+import com.santoni7.readme.data.ImageRepository;
 import com.santoni7.readme.data.Person;
-import com.santoni7.readme.data.PersonDataSource;
+import com.santoni7.readme.data.datasource.PersonDataSource;
 import com.santoni7.readme.util.TextUtils;
 
 import java.io.IOException;
@@ -16,30 +16,36 @@ import io.reactivex.subjects.ReplaySubject;
 
 public class MainPresenter extends PresenterBase<MainContract.View> implements MainContract.Presenter {
     private static final String TAG = MainPresenter.class.getSimpleName();
-    private CompositeDisposable subscriptions = new CompositeDisposable();
+    private CompositeDisposable disposables = new CompositeDisposable();
 
-    private ReplaySubject<Throwable> errorsSubject = ReplaySubject.create();
+    private ReplaySubject<Throwable> errors = ReplaySubject.create();
 
     @Override
     public void viewReady() {
         if (!isViewAttached()) {
-            errorsSubject.onNext(new IllegalStateException("viewReady() was called, but view is not attached!"));
+            errors.onNext(new IllegalStateException("viewReady() was called, but view is not attached!"));
             return;
         }
         readData();
     }
 
+//    @Override
+//    public void onStart() {
+//        Disposable d = ImageRepository.instance().populateWithImages(Observable.fromIterable(personList))
+//                // As soon as image is loaded for a person, update corresponding item in view's list
+//                .subscribe(getView()::updatePerson, errors::onNext, getView()::hideProgressOverlay);
+//        disposables.add(d);
+//    }
+
     private void readData() {
         final PersonDataSource personDataSource = new PersonDataSource();
-        final PersonImageRepository imageRepo = PersonImageRepository.instance();
+        final ImageRepository imageRepo = ImageRepository.instance();
         try {
-            getView().showProgressOverlay();
 
             // Read json from asset file
             String json = TextUtils.readStringFromStream(getView().openAssetFile(Constants.DATA_ASSET_FILENAME));
             if (json.isEmpty()) {
-                getView().hideProgressOverlay();
-                errorsSubject.onNext(new IllegalArgumentException("Json file is empty!"));
+                errors.onNext(new IllegalArgumentException("Json file is empty!"));
                 return;
             }
 
@@ -48,14 +54,18 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
 
             // Add every next person to view's recyclerView,
             // if error occurs pass it to errors observable
-            Disposable d = personObservable.subscribe(getView()::addPerson, errorsSubject::onNext);
-            subscriptions.add(d);
+            Disposable d = personObservable.subscribe(getView()::addPerson, errors::onNext);
+            disposables.add(d);
+
+//            d = personObservable.toList().subscribe(list -> personList = list);
+//            disposables.add(d);
 
             // Immediately request images to be loaded
             d = imageRepo.populateWithImages(personObservable)
                     // As soon as image is loaded for a person, update corresponding item in view's list
-                    .subscribe(getView()::updatePerson, errorsSubject::onNext, getView()::hideProgressOverlay);
-            subscriptions.add(d);
+                    .subscribe(getView()::updatePerson, errors::onNext);
+            disposables.add(d);
+
 
         } catch (IOException e) {
             e.fillInStackTrace();
@@ -71,7 +81,7 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
 
     @Override
     public void onDestroy() {
-        subscriptions.clear();
-        errorsSubject.cleanupBuffer();
+        disposables.clear();
+        errors.cleanupBuffer();
     }
 }

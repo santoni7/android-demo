@@ -9,9 +9,9 @@ import java.io.InputStream;
 
 public interface MainContract {
     interface View extends MvpView {
-        void showProgressOverlay();
-
-        void hideProgressOverlay();
+//        void showProgressOverlay();
+//
+//        void hideProgressOverlay();
 
         void addPerson(Person person);
 
@@ -24,6 +24,8 @@ public interface MainContract {
 
     interface Presenter extends MvpPresenter<View> {
         void onListItemClicked(Person p);
+
         void onDestroy();
+
     }
 }

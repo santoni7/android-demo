@@ -4,26 +4,26 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.santoni7.readme.R;
-import com.santoni7.readme.data.PersonImageRepository;
+import com.santoni7.readme.common.OnSwipeTouchListener;
 import com.santoni7.readme.data.Person;
 
-import java.util.Locale;
-
+import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
-public class DetailsActivity extends AppCompatActivity {
+public class DetailsActivity extends AppCompatActivity implements DetailsContract.View {
 
     public static final String EXTRA_PERSON_ID = "person_id";
     private static final String TAG = DetailsActivity.class.getSimpleName();
 
-    CompositeDisposable subscriptions = new CompositeDisposable();
+    private DetailsPresenter presenter;
+
+    private CompositeDisposable disposables = new CompositeDisposable();
 
     TextView txtName;
     TextView txtAge;
@@ -32,21 +32,18 @@ public class DetailsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        setContentView(R.layout.activity_details_card);
         setContentView(R.layout.activity_details);
-
         overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_left);
+
+        presenter = new DetailsPresenter();
+        presenter.attachView(this);
 
         initView();
 
-        Intent i = getIntent();
-        String id = i.getStringExtra(EXTRA_PERSON_ID);
-        if (id != null) {
-            Disposable d = PersonImageRepository.instance().findPersonById(id).subscribe(
-                    this::onPersonReceived,
-                    err -> Toast.makeText(this, "Error: Could not find person!", Toast.LENGTH_SHORT).show()
-            );
-            subscriptions.add(d);
-        }
+
+
+        presenter.viewReady();
     }
 
     private void initView() {
@@ -59,12 +56,41 @@ public class DetailsActivity extends AppCompatActivity {
         txtName = findViewById(R.id.txtName);
         txtAge = findViewById(R.id.txtAge);
         imgAvatar = findViewById(R.id.imgAvatar);
+
+        findViewById(R.id.constraintLayout).setOnTouchListener(new OnSwipeTouchListener(this) {
+            @Override
+            public void onSwipeRight() {
+                finish();
+            }
+        });
+    }
+
+    @Override
+    public void displayPerson(Person person) {
+        txtName.setText(person.getFullName());
+        txtAge.setText(getString(R.string.age_string_format, person.getAge()));
+        Disposable d = person.getImageSource().subscribe(imgAvatar::setImageBitmap);
+        disposables.add(d);
+    }
+
+
+    @Override
+    public Single<String> getPersonIdExtra() {
+        Intent i = getIntent();
+        String id = i.getStringExtra(EXTRA_PERSON_ID);
+        return Observable.just(id).singleOrError();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_right);
     }
 
     @Override
     public boolean onSupportNavigateUp() {
         finish();
-
         return true;
     }
 
@@ -75,22 +101,15 @@ public class DetailsActivity extends AppCompatActivity {
     }
 
     @Override
-    public void finish() {
-        super.finish();
-
-        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_right);
+    protected void onStop() {
+        super.onStop();
+        disposables.clear();
+        presenter.onStop();
     }
 
-    private void onPersonReceived(Person person) {
-        txtName.setText(person.getFullName());
-        String ageString = String.format(Locale.getDefault(), "Age: %d", person.getAge());
-        txtAge.setText(ageString);
-
-        Disposable subscription = person.getImageSource().singleOrError()
-                .subscribe(imgAvatar::setImageBitmap, e -> Log.e(TAG, e.toString()));
-        subscriptions.add(subscription);
-
-
-        subscriptions.clear();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        presenter.onDestroy();
     }
 }
