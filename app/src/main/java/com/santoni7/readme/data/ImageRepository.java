@@ -1,21 +1,20 @@
 package com.santoni7.readme.data;
 
+import android.content.Context;
 import android.util.Log;
 
+import com.santoni7.readme.data.datasource.ImageDataSource;
+import com.santoni7.readme.data.datasource.LocalImageDataSource;
 import com.santoni7.readme.data.datasource.RemoteImageDataSource;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.observables.ConnectableObservable;
 import io.reactivex.subjects.ReplaySubject;
 
-public class ImageRepository implements Disposable {
-    private static final String TAG = ImageRepository.class.getSimpleName();
+public class ImageRepository {
+    private final static String TAG = ImageRepository.class.getSimpleName();
+
     private static ImageRepository _instance = null;
 
     public static ImageRepository instance() {
@@ -27,47 +26,70 @@ public class ImageRepository implements Disposable {
 
     private CompositeDisposable disposables = new CompositeDisposable();
 
+    private ImageDataSource localDataSource;
+    private ImageDataSource remoteDataSource;
 
-    private ReplaySubject<Throwable> errorSubject = ReplaySubject.create();
-    private ReplaySubject<Person> personSubject = ReplaySubject.create();
+    private ReplaySubject<Person> peopleWithImageSubject = ReplaySubject.create();
 
-    private List<Person> personList = new ArrayList<>();
+    private boolean isInitialized = false;
 
-    private RemoteImageDataSource remoteDataSource = new RemoteImageDataSource();
-    //todo local image data source
-
-    // Private constructor in a singleton class
-    private ImageRepository() {
-        Log.d(TAG, "ImageRepository singleton instantiated");
+    public void initialize(Context applicationContext) {
+        localDataSource = new LocalImageDataSource(applicationContext);
+        remoteDataSource = new RemoteImageDataSource();
+        isInitialized = true;
     }
 
-
-    /**
-     * For every person in sequence, load and save an image from specified avatar url
-     * @param personObservable sequence of people to load images for
-     * @return sequence of people, with images ready
-     */
-    public Observable<Person> populateWithImages(Observable<Person> personObservable) {
-        ConnectableObservable<Person> resultObservable = remoteDataSource.populateWithImages(personObservable).publish();
-        resultObservable.subscribe(personSubject);
-        Disposable d = resultObservable.subscribe(personList::add, errorSubject::onNext);
-        disposables.add(d);
-        disposables.add(resultObservable.connect());
-
-        return personSubject;
+    public boolean isInitialized() {
+        return isInitialized;
     }
 
-    public Single<Person> findPersonById(String personId) {
-        return personSubject.filter(p -> p.getId().equals(personId)).firstOrError();
+    public Observable<Person> populateWithImages(Observable<Person> people) {
+        Log.d(TAG, "populateWithImages called: people=" + people);
+        if (!isInitialized()) {
+            Log.e(TAG, "populateWithImages(): ImageRepository not initialized");
+            return Observable.error(new IllegalAccessException("ImageRepository not initialized"));
+        }
+        peopleWithImageSubject.cleanupBuffer();
+
+
+        // Try to load images from local storage,
+        // then load from remote source those that are not found
+        Observable<Person> peopleFromLocal = localDataSource.populateWithImages(people);
+        Observable<Person> failedFromLocal = localDataSource.getFailedObjects();
+
+        Observable<Person> peopleFromRemote = remoteDataSource.populateWithImages(failedFromLocal);
+
+
+        subscribeToLog(peopleFromLocal, "PeopleFromLocal");
+        subscribeToLog(failedFromLocal, "FailedFromLocal");
+        subscribeToLog(peopleFromRemote, "PeopleFromRemote");
+
+
+        Observable<Person> peopleWithImages = Observable.mergeDelayError(peopleFromLocal, peopleFromRemote);
+        peopleWithImages.subscribe(peopleWithImageSubject);
+        subscribeToLog(peopleWithImageSubject, "RESULT");
+        return peopleWithImageSubject;
     }
 
-    @Override
+    private void subscribeToLog(Observable<Person> people, String tag) {
+        disposables.add(
+                people.subscribe(person ->
+                        Log.d(TAG, "[" +tag + "] onNext() -> Person = " + person.toString()),
+                        err -> Log.d(TAG, "[" +tag + "] onError() -> " + err.toString()),
+                        () -> Log.d(TAG, "[" +tag + "] onCompleted()")
+                )
+        );
+    }
+
     public void dispose() {
         disposables.clear();
+        localDataSource.dispose();
+        remoteDataSource.dispose();
     }
 
-    @Override
-    public boolean isDisposed() {
-        return false;
+    public Single<Person> findPersonById(String id) {
+        return peopleWithImageSubject
+                .filter(person -> person.getId().equals(id))
+                .firstOrError();
     }
 }

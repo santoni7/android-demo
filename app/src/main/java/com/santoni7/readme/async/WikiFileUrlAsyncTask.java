@@ -20,8 +20,8 @@ import io.reactivex.subjects.AsyncSubject;
 /**
  * An async task, used to get real image URL by Wiki File Name with Wikipedia API
  */
-public class WikipediaFileUrlAsyncTask extends AsyncTask<String, Void, String> implements ReactiveAsyncTask<String> {
-    private static final String TAG = WikipediaFileUrlAsyncTask.class.getSimpleName();
+public class WikiFileUrlAsyncTask extends AsyncTask<String, Void, String> implements ReactiveAsyncTask<String> {
+    private static final String TAG = WikiFileUrlAsyncTask.class.getSimpleName();
     private static final String API_QUERY_FORMAT = "https://en.wikipedia.org/w/api.php?action=query&titles=File:%s&prop=imageinfo&iiprop=url&format=json";
 
     private AsyncSubject<String> urlSource = AsyncSubject.create();

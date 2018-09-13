@@ -19,6 +19,14 @@ public class Person {
 
     }
 
+
+
+    @Override
+    public String toString() {
+        return String.format("{id: %s, full_name: %s, avatar_url: %s, image_source: %s}", id, getFullName(), avatarUrl, imageSource);
+    }
+
+
     public String getId() {
         return id;
     }

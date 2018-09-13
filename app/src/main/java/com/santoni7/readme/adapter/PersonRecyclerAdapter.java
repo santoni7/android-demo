@@ -49,8 +49,8 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
         // Replace old Person object with new
         for (int i = 0; i < people.size(); ++i) {
             if (people.get(i).getId().equals(person.getId())) {
-                people.remove(i);
-                people.add(i, person);
+                people.set(i, person);
+                break;
             }
         }
         if (vh != null) {
@@ -120,7 +120,10 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
         }
 
         void updateImage(Person person) {
-            Log.d(TAG, "updateImage: id=" + person.getId());
+            if (person == null) {
+                Log.e(TAG, "updateImage: person = null");
+                return;
+            }
             if (person.getImageSource() != null) {
                 Disposable d = person.getImageSource()
                         .subscribe(this::onBitmapReady,
@@ -129,9 +132,6 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
                                     Log.e(TAG, "person.getImageSource produced error: " + err);
                                 });
                 disposables.add(d);
-            } else {
-                Log.e(TAG, String.format("person.getImageSource() == null:\n\t\t{id: %s, full_name: %s, image_source: %s}",
-                        person.getId(), person.getFullName(), person.getImageSource()));
             }
         }
 

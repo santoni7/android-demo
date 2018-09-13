@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        ImageRepository.instance().initialize(getApplicationContext());
+
         initView();
 
         presenter = new MainPresenter();
@@ -94,12 +96,12 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
     @Override
     protected void onDestroy() {
+        Log.d(TAG, "onDestroy");
         presenter.onDestroy();
         presenter.detachView();
         adapter.dispose();
         ImageRepository.instance().dispose();
         super.onDestroy();
-        Log.d(TAG, "onDestroy");
     }
 
     @Override

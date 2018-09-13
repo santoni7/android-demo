@@ -1,42 +1,27 @@
 package com.santoni7.readme.data.datasource;
 
+import android.util.Log;
+
 import com.santoni7.readme.data.Person;
+import com.santoni7.readme.util.TextUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import io.reactivex.Observable;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.subjects.ReplaySubject;
 
-public class PersonDataSource implements Disposable {
+public class PersonDataSource {
     private static String TAG = PersonDataSource.class.getSimpleName();
 
     public PersonDataSource() {
     }
 
-    private boolean isDisposed = false;
-    private CompositeDisposable disposables = new CompositeDisposable();
-
-    private ReplaySubject<Person> personSubject = ReplaySubject.create();
-    private ReplaySubject<Throwable> errors = ReplaySubject.create();
-
-
     /**
      * Parse a sequence of Person objects from json string
-     * @return
      */
-    public Observable<Person> parseData(String json){
-        if (personSubject != null) {
-            personSubject.cleanupBuffer();
-            disposables.clear();
-        }
-        else {
-            personSubject = ReplaySubject.create();
-        }
-        Observable<Person> source = Observable.create(emitter -> {
+    public Observable<Person> parsePeople(String json) {
+        return Observable.create(emitter -> {
             try {
                 JSONObject employees = new JSONObject(json).getJSONObject("employees");
                 JSONArray ids = employees.names();
@@ -46,18 +31,21 @@ public class PersonDataSource implements Disposable {
                     JSONObject personObj = employees.getJSONObject(id);
                     Person person = jsonToPerson(id, personObj);
 
+                    person.setImageFileName(TextUtils.getImageFileName(person.getAvatarUrl()));
+
                     emitter.onNext(person);
+                    Log.d(TAG, "Next person parsed and passed to observable: " + person.toString());
                 }
                 emitter.onComplete();
             } catch (JSONException e) {
                 emitter.onError(e);
+                Log.e(TAG, "Error occured in parsePeople: " + e.toString());
+                e.fillInStackTrace();
             }
         });
-        source.subscribe(personSubject);
-        return source;
     }
 
-    private Person jsonToPerson(String id, JSONObject personObject) throws JSONException {
+    private static Person jsonToPerson(String id, JSONObject personObject) throws JSONException {
         Person p = new Person();
         p.setId(id);
         p.setFirstName(personObject.getString("firstName"));
@@ -65,20 +53,5 @@ public class PersonDataSource implements Disposable {
         p.setAge(personObject.getInt("age"));
         p.setAvatarUrl(personObject.getString("avatar"));
         return p;
-    }
-
-    @Override
-    public void dispose() {
-        disposables.clear();
-        isDisposed = true;
-        personSubject.cleanupBuffer();
-        errors.cleanupBuffer();
-        personSubject = null;
-        errors = null;
-    }
-
-    @Override
-    public boolean isDisposed() {
-        return isDisposed;
     }
 }
