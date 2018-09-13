@@ -72,6 +72,13 @@ public class RemoteImageDataSource implements ImageDataSource {
     }
 
     @Override
+    public void savePersonImages(Observable<Person> people) {
+        // throw new Exception("Method savePersonImages() not implemented for RemoteImageDataSource");
+
+        // NOT IMPLEMENTED FOR THIS DATA SOURCE
+    }
+
+    @Override
     public void dispose() {
         disposables.clear();
     }

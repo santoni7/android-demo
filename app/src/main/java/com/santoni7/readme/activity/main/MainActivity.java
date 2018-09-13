@@ -9,10 +9,12 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
+import com.santoni7.readme.MyApplication;
 import com.santoni7.readme.R;
 import com.santoni7.readme.activity.details.DetailsActivity;
 import com.santoni7.readme.adapter.PersonRecyclerAdapter;
-import com.santoni7.readme.data.ImageRepository;
+import com.santoni7.readme.dagger.MyComponent;
+import com.santoni7.readme.data.ImageRepositoryImpl;
 import com.santoni7.readme.data.Person;
 
 import java.io.IOException;
@@ -32,12 +34,13 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ImageRepository.instance().initialize(getApplicationContext());
-
         initView();
+
+        MyComponent component = ((MyApplication)getApplication()).getComponent();
 
         presenter = new MainPresenter();
         presenter.attachView(this);
+        presenter.init(component);
 
         adapter = new PersonRecyclerAdapter(new ArrayList<>(), presenter::onListItemClicked);
         recyclerView.setAdapter(adapter);
@@ -100,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
         presenter.onDestroy();
         presenter.detachView();
         adapter.dispose();
-        ImageRepository.instance().dispose();
+//        ImageRepositoryImpl.instance().dispose();
         super.onDestroy();
     }
 

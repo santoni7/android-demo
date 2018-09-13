@@ -7,8 +7,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.santoni7.readme.MyApplication;
 import com.santoni7.readme.R;
 import com.santoni7.readme.common.OnSwipeTouchListener;
+import com.santoni7.readme.dagger.MyComponent;
 import com.santoni7.readme.data.Person;
 
 import io.reactivex.Observable;
@@ -32,7 +34,6 @@ public class DetailsActivity extends AppCompatActivity implements DetailsContrac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_details_card);
         setContentView(R.layout.activity_details);
         overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_left);
 
@@ -41,8 +42,8 @@ public class DetailsActivity extends AppCompatActivity implements DetailsContrac
 
         initView();
 
-
-
+        MyComponent component = ((MyApplication)getApplication()).getComponent();
+        presenter.init(component);
         presenter.viewReady();
     }
 

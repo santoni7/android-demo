@@ -59,10 +59,24 @@ public class LocalImageDataSource implements ImageDataSource {
         });
     }
 
+    @Override
+    public void savePersonImages(Observable<Person> people) {
+        disposables.add(people.subscribe(person ->
+                person.getImageSource().subscribe(bitmap -> {
+                    Context ctx = contextWeakReference.get();
+                    if (ctx != null && bitmap != null) {
+                        IOUtils.saveImage(ctx, bitmap, person.getImageFileName());
+                    } else {
+                        Log.e(TAG, "Could not save image: Context=" + ctx + "; Bitmap=" + bitmap + "; FileName=" + person.getImageFileName());
+                    }
+                }))
+        );
+    }
 
     @Override
     public void dispose() {
         disposables.clear();
+        failedObjects.cleanupBuffer();
     }
 
 }
