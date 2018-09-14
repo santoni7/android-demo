@@ -1,11 +1,8 @@
 package com.santoni7.readme.data;
 
-import android.graphics.Bitmap;
-import android.os.Handler;
 import android.util.Log;
 
 import com.santoni7.readme.data.datasource.ImageDataSource;
-import com.santoni7.readme.util.IOUtils;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -26,31 +23,49 @@ public class ImageRepositoryImpl implements ImageRepository {
         this.remoteDataSource = remoteImageDataSource;
     }
 
-
     @Override
-    public Observable<Person> populateWithImages(Observable<Person> people) {
-        Log.d(TAG, "populateWithImages called: people=" + people);
+    public Observable<Person> populateWithImages(Observable<Person> people, SourceStrategy sourceStrategy) {
+        Log.d(TAG, "populateWithImages(people=" + people + ", sourceStrategy=" + sourceStrategy.toString());
         disposables.clear();
         peopleWithImageSubject.cleanupBuffer();
 
+        Observable<Person> result;
+        switch (sourceStrategy) {
+            case LocalFirst:
+            default:
+                result = runLocalFirst(people);
+                break;
+            case RemoteFirst:
+                result = runRemoteFirst(people);
+                break;
+        }
 
-        // Try to load images from local storage,
-        // then load from remote source those that are not found
-        Observable<Person> peopleFromLocal = localDataSource.populateWithImages(people);
-        Observable<Person> failedFromLocal = localDataSource.getFailedObjects();
-
-        Observable<Person> peopleFromRemote = remoteDataSource.populateWithImages(failedFromLocal)
-                .replay().autoConnect();
-
-        // TODO: Run in a new thread
-        localDataSource.savePersonImages(peopleFromRemote);
-
-        // Merge from two sources and subscribe subject to result
-        Observable.mergeDelayError(peopleFromLocal, peopleFromRemote)
-                .subscribe(peopleWithImageSubject);
+        result.subscribe(peopleWithImageSubject);
 
         subscribeToLog(peopleWithImageSubject, "RESULT");
         return peopleWithImageSubject;
+    }
+
+    private Observable<Person> runLocalFirst(Observable<Person> people) {
+        ImagePopulationResult result = run(people, localDataSource, remoteDataSource);
+        localDataSource.savePersonImages(result.failedFromFirst);
+        return result.successful;
+    }
+
+
+    private Observable<Person> runRemoteFirst(Observable<Person> people) {
+        ImagePopulationResult result = run(people, remoteDataSource, localDataSource);
+        localDataSource.savePersonImages(result.successful);
+        return result.successful;
+    }
+
+    // Get all available images from first source, then try get remaining from second
+    private ImagePopulationResult run(Observable<Person> people, ImageDataSource firstSource, ImageDataSource secondSource) {
+        Observable<Person> fromFirst = firstSource.populateWithImages(people);
+        Observable<Person> fromSecond = secondSource.populateWithImages(firstSource.getFailedObjects());
+
+        Observable<Person> successful = Observable.mergeDelayError(fromFirst, fromSecond);
+        return new ImagePopulationResult(successful, firstSource.getFailedObjects(), secondSource.getFailedObjects());
     }
 
     private void subscribeToLog(Observable<Person> people, String tag) {
@@ -75,5 +90,15 @@ public class ImageRepositoryImpl implements ImageRepository {
         return peopleWithImageSubject
                 .filter(person -> person.getId().equals(id))
                 .firstOrError();
+    }
+
+    private class ImagePopulationResult {
+        Observable<Person> successful, failedFromFirst, failedFromSecond;
+
+        ImagePopulationResult(Observable<Person> successful, Observable<Person> failedFromFirst, Observable<Person> failedFromSecond) {
+            this.successful = successful;
+            this.failedFromFirst = failedFromFirst;
+            this.failedFromSecond = failedFromSecond;
+        }
     }
 }

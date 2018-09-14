@@ -15,6 +15,12 @@ public interface MainContract {
 
         void updatePerson(Person person);
 
+        void clearPeopleList();
+
+        void showProgress();
+
+        void hideProgress();
+
         void openDetailsScreen(Person person);
 
         InputStream openAssetFile(String fileName) throws IOException;
@@ -25,5 +31,6 @@ public interface MainContract {
 
         void onDestroy();
 
+        void onRefreshRequested();
     }
 }

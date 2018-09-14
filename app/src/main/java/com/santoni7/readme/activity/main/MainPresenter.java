@@ -3,22 +3,24 @@ package com.santoni7.readme.activity.main;
 import android.util.Log;
 
 import com.santoni7.readme.Constants;
-import com.santoni7.readme.common.InjectablePresenter;
 import com.santoni7.readme.common.PresenterBase;
 import com.santoni7.readme.dagger.MyComponent;
 import com.santoni7.readme.data.ImageRepository;
-import com.santoni7.readme.data.ImageRepositoryImpl;
 import com.santoni7.readme.data.Person;
 import com.santoni7.readme.data.datasource.PersonDataSource;
 import com.santoni7.readme.util.TextUtils;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
+import io.reactivex.Completable;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observables.ConnectableObservable;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.ReplaySubject;
 
 public class MainPresenter extends PresenterBase<MainContract.View> implements MainContract.Presenter {
@@ -27,8 +29,10 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
 
     private ReplaySubject<Throwable> errors = ReplaySubject.create();
 
-    @Inject PersonDataSource personDataSource;
-    @Inject ImageRepository imageRepository;
+    @Inject
+    PersonDataSource personDataSource;
+    @Inject
+    ImageRepository imageRepository;
 
 
     @Override
@@ -38,7 +42,7 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
 
     @Override
     public void viewReady() {
-        if(personDataSource == null || imageRepository == null){
+        if (personDataSource == null || imageRepository == null) {
             throw new IllegalStateException("Presenter must be initialized at first!");
         }
         disposables.add(errors.subscribe(
@@ -53,11 +57,17 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
             return;
         }
 
-        readData();
+        requestDataUpdate(ImageRepository.SourceStrategy.LocalFirst);
     }
 
-    private void readData() {
+    private void requestDataUpdate(ImageRepository.SourceStrategy sourceStrategy) {
         try {
+            getView().hideProgress();
+//            disposables.add(
+//                    Completable.complete()
+//                            .delay(500, TimeUnit.MILLISECONDS, Schedulers.io())
+//                            .subscribe(getView()::hideProgress)
+//            );
             String json = TextUtils.readStringFromStream(getView().openAssetFile(Constants.DATA_ASSET_FILENAME));
             if (json.isEmpty()) {
                 errors.onNext(new IllegalArgumentException("Json file is empty!"));
@@ -66,20 +76,26 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
 
             ConnectableObservable<Person> personObservable = personDataSource.parsePeople(json).replay();
 
-
             disposables.add(  // Add people without images yet to view
                     personObservable.subscribe(getView()::addPerson, errors::onNext)
             );
 
-            disposables.add(  // Load images, update view
-                    imageRepository.populateWithImages(personObservable)
-                            .subscribe(getView()::updatePerson, errors::onNext)
+            Observable<Person> resultPeople = imageRepository.populateWithImages(personObservable, sourceStrategy);
+            disposables.add(
+                    resultPeople.subscribe(getView()::updatePerson, errors::onNext)
             );
 
             personObservable.connect();
         } catch (IOException e) {
             e.fillInStackTrace();
         }
+    }
+
+    @Override
+    public void onRefreshRequested() {
+        Log.d(TAG, "onRefreshRequested");
+        getView().clearPeopleList();
+        requestDataUpdate(ImageRepository.SourceStrategy.RemoteFirst);
     }
 
     @Override

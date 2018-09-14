@@ -8,7 +8,9 @@ import com.santoni7.readme.data.Person;
 import com.santoni7.readme.util.TextUtils;
 
 import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.ReplaySubject;
 
 public class RemoteImageDataSource implements ImageDataSource {
@@ -18,8 +20,12 @@ public class RemoteImageDataSource implements ImageDataSource {
 
     @Override
     public Observable<Person> populateWithImages(Observable<Person> people) {
-        return people.flatMap(this::transformUrl)
-                .flatMap(this::loadBitmap);
+        return people
+                .flatMap(this::transformUrl)
+                .flatMap(this::loadBitmap)
+                .replay().autoConnect()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     @Override

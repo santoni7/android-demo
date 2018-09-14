@@ -8,6 +8,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -27,11 +29,12 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
     private static final String TAG = PersonRecyclerAdapter.class.getSimpleName();
 
     private List<Person> people;
-
     private Map<String, ViewHolder> viewHolderById = new HashMap<>();
     private OnItemClickListener clickListener;
 
     private CompositeDisposable disposables = new CompositeDisposable();
+
+    private int lastAnimatedPosition = -1;
 
     public PersonRecyclerAdapter(List<Person> peopleList, OnItemClickListener clickListener) {
         people = peopleList;
@@ -42,6 +45,7 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
         people.add(p);
         notifyDataSetChanged();
     }
+
 
     public void updatePerson(Person person) {
         ViewHolder vh = viewHolderById.get(person.getId());
@@ -74,6 +78,7 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
         Person p = people.get(position);
         viewHolder.bind(p, clickListener);
         viewHolderById.put(p.getId(), viewHolder);
+        setAnimation(viewHolder.cardView, position);
     }
 
     @Override
@@ -83,6 +88,28 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
 
     public void dispose() {
         disposables.dispose();
+    }
+
+    public void clear() {
+        int oldSize = people.size();
+        people.clear();
+        viewHolderById.clear();
+        lastAnimatedPosition = -1;
+        notifyItemRangeRemoved(0, oldSize);
+    }
+
+    private void setAnimation(View viewToAnimate, int position) {
+        // If the bound view wasn't previously displayed on screen, it's animated
+        if (position > lastAnimatedPosition) {
+            Animation animation = AnimationUtils.loadAnimation(viewToAnimate.getContext(), R.anim.fade_in);
+            viewToAnimate.setVisibility(View.INVISIBLE);
+            // Start animation delayed for every item, so that they show up one-by-one
+            viewToAnimate.postDelayed(() -> {
+                viewToAnimate.setVisibility(View.VISIBLE);
+                viewToAnimate.startAnimation(animation);
+            }, position * 150);
+            lastAnimatedPosition = position;
+        }
     }
 
     public interface OnItemClickListener {

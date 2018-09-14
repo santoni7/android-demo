@@ -10,7 +10,10 @@ import com.santoni7.readme.util.IOUtils;
 import java.lang.ref.WeakReference;
 
 import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.ReplaySubject;
 
 public class LocalImageDataSource implements ImageDataSource {
@@ -30,7 +33,11 @@ public class LocalImageDataSource implements ImageDataSource {
     public Observable<Person> populateWithImages(Observable<Person> people) {
         failedObjects.cleanupBuffer();
         disposables.clear();
-        return people.flatMap(this::loadBitmap);
+        return people
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .flatMap(this::loadBitmap)
+                .replay().autoConnect();
     }
 
     @Override
