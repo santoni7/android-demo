@@ -4,10 +4,12 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,20 +26,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-import io.reactivex.disposables.CompositeDisposable;
-
 public class MainActivity extends AppCompatActivity implements MainContract.View {
     private final String TAG = MainActivity.class.getSimpleName();
     private MainContract.Presenter presenter;
 
-    private CompositeDisposable disposables = new CompositeDisposable();
-
     private RecyclerView recyclerView;
     private PersonRecyclerAdapter adapter;
     private SwipeRefreshLayout swipeLayout;
-
-    // Caching enabled, by other words
-    private boolean localSourceEnabled = true;
 
 
     @Override
@@ -64,11 +59,14 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     }
 
     private void initView() {
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(R.string.main_activity_title);
-        }
-
         this.recyclerView = findViewById(R.id.recyclerView);
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        toolbar.setTitle(R.string.main_activity_title);
+        toolbar.setSubtitle(null);
+//        toolbar.setSubtitle(R.string.main_activity_subtitle);
+        toolbar.inflateMenu(R.menu.main_menu);
 
         swipeLayout = findViewById(R.id.swipeRefreshLayout);
         swipeLayout.setOnRefreshListener(presenter::onRefreshRequested);
@@ -76,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     }
 
     private void setupLayoutManager(int orientation) {
+        // Change RecyclerView LayoutManager to display cards in two columns in landscape mode
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             GridLayoutManager layoutManager = new GridLayoutManager(this, 2, GridLayoutManager.VERTICAL, false);
             recyclerView.setLayoutManager(layoutManager);
@@ -119,10 +118,12 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.caching_checkable:
-                localSourceEnabled = !localSourceEnabled;
-                item.setChecked(localSourceEnabled);
+        switch (item.getItemId()){
+            case R.id.menu_item_refresh:
+                presenter.onRefreshRequested();
+                break;
+            case R.id.menu_item_about:
+                presenter.onAboutClicked();
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -156,17 +157,24 @@ public class MainActivity extends AppCompatActivity implements MainContract.View
     }
 
     @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        setupLayoutManager(newConfig.orientation);
+    }
+
+    @Override
+    public void showAboutDialog() {
+        new AlertDialog.Builder(this)
+                .setView(R.layout.about_dialog)
+                .setPositiveButton("Close", null).show();
+    }
+
+    @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy");
         presenter.onDestroy();
         presenter.detachView();
         adapter.dispose();
         super.onDestroy();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        setupLayoutManager(newConfig.orientation);
     }
 }

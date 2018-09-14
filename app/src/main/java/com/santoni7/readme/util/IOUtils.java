@@ -22,8 +22,4 @@ public class IOUtils {
         fiStream.close();
         return bitmap;
     }
-
-    public static boolean fileExists(Context context, String fileName) {
-        return Arrays.asList(context.fileList()).contains(fileName);
-    }
 }

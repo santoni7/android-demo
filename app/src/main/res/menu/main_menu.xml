@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/caching_checkable"
-        android:titleCondensed="Use caching"
-        android:title="Use caching"
-        android:icon="@android:drawable/ic_menu_preferences"
-        android:checkable="true" />
+        android:id="@+id/menu_item_refresh"
+        android:enabled="true"
+        android:title="@string/refresh"
+        android:titleCondensed="@string/refresh"
+        android:visible="true"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_item_about"
+        android:enabled="true"
+        android:title="@string/about"
+        android:titleCondensed="@string/about"
+        android:visible="true"
+        app:showAsAction="never" />
 </menu>

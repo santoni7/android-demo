@@ -60,8 +60,7 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
         if (vh != null) {
             vh.updateImage(person);
         } else {
-            // todo
-            Log.d(TAG, "updatePerson(id=" + person.getId() + "): ViewHolder is not found in map!");
+            Log.e(TAG, "updatePerson(id=" + person.getId() + "): ViewHolder is not found in map!");
         }
     }
 

@@ -7,6 +7,7 @@ import android.view.View;
 
 /**
  * Detects left and right swipes across a view.
+ * Used to implement "swipe left to go back" in DetailsActivity
  *
  * SOURCE: https://stackoverflow.com/a/19506010
  */

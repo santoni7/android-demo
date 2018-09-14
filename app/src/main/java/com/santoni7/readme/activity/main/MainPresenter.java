@@ -63,11 +63,6 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
     private void requestDataUpdate(ImageRepository.SourceStrategy sourceStrategy) {
         try {
             getView().hideProgress();
-//            disposables.add(
-//                    Completable.complete()
-//                            .delay(500, TimeUnit.MILLISECONDS, Schedulers.io())
-//                            .subscribe(getView()::hideProgress)
-//            );
             String json = TextUtils.readStringFromStream(getView().openAssetFile(Constants.DATA_ASSET_FILENAME));
             if (json.isEmpty()) {
                 errors.onNext(new IllegalArgumentException("Json file is empty!"));
@@ -76,7 +71,7 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
 
             ConnectableObservable<Person> personObservable = personDataSource.parsePeople(json).replay();
 
-            disposables.add(  // Add people without images yet to view
+            disposables.add(  // Add people without images to the view as is
                     personObservable.subscribe(getView()::addPerson, errors::onNext)
             );
 
@@ -101,6 +96,12 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
     @Override
     public void onListItemClicked(Person p) {
         getView().openDetailsScreen(p);
+    }
+
+    @Override
+    public void onAboutClicked() {
+        Log.d(TAG, "onAboutClicked");
+        getView().showAboutDialog();
     }
 
     @Override

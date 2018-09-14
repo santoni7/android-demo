@@ -24,13 +24,17 @@ public interface MainContract {
         void openDetailsScreen(Person person);
 
         InputStream openAssetFile(String fileName) throws IOException;
+
+        void showAboutDialog();
     }
 
     interface Presenter extends MvpPresenter<View>, InjectablePresenter<MyComponent> {
         void onListItemClicked(Person p);
 
-        void onDestroy();
+        void onAboutClicked();
 
         void onRefreshRequested();
+
+        void onDestroy();
     }
 }

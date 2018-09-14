@@ -2,8 +2,8 @@ package com.santoni7.readme.activity.details;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -30,6 +30,7 @@ public class DetailsActivity extends AppCompatActivity implements DetailsContrac
     TextView txtName;
     TextView txtAge;
     ImageView imgAvatar;
+    Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,23 +43,25 @@ public class DetailsActivity extends AppCompatActivity implements DetailsContrac
 
         initView();
 
-        MyComponent component = ((MyApplication)getApplication()).getComponent();
+        MyComponent component = ((MyApplication) getApplication()).getComponent();
         presenter.init(component);
         presenter.viewReady();
     }
 
     private void initView() {
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setTitle(R.string.details_activity_title);
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
+        toolbar.setTitle(R.string.details_activity_title);
 
         txtName = findViewById(R.id.txtName);
         txtAge = findViewById(R.id.txtAge);
         imgAvatar = findViewById(R.id.imgAvatar);
 
-        findViewById(R.id.constraintLayout).setOnTouchListener(new OnSwipeTouchListener(this) {
+        findViewById(R.id.rootLayout).setOnTouchListener(new OnSwipeTouchListener(this) {
             @Override
             public void onSwipeRight() {
                 finish();
@@ -68,6 +71,7 @@ public class DetailsActivity extends AppCompatActivity implements DetailsContrac
 
     @Override
     public void displayPerson(Person person) {
+        toolbar.setSubtitle(person.getFullName());
         txtName.setText(person.getFullName());
         txtAge.setText(getString(R.string.age_string_format, person.getAge()));
         Disposable d = person.getImageSource().subscribe(imgAvatar::setImageBitmap);
