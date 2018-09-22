@@ -15,8 +15,6 @@ import com.santoni7.readme.data.Person;
 
 import io.reactivex.Observable;
 import io.reactivex.Single;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
 
 public class DetailsActivity extends AppCompatActivity implements DetailsContract.View {
 
@@ -24,8 +22,6 @@ public class DetailsActivity extends AppCompatActivity implements DetailsContrac
     private static final String TAG = DetailsActivity.class.getSimpleName();
 
     private DetailsPresenter presenter;
-
-    private CompositeDisposable disposables = new CompositeDisposable();
 
     TextView txtName;
     TextView txtAge;
@@ -74,8 +70,14 @@ public class DetailsActivity extends AppCompatActivity implements DetailsContrac
         toolbar.setSubtitle(person.getFullName());
         txtName.setText(person.getFullName());
         txtAge.setText(getString(R.string.age_string_format, person.getAge()));
-        Disposable d = person.getImageSource().subscribe(imgAvatar::setImageBitmap);
-        disposables.add(d);
+        if(person.getImage() != null) {
+            imgAvatar.setImageBitmap(person.getImage());
+//            Bitmap img = person.getImage();
+//            img.reconfigure(40, 40, Bitmap.Config.ARGB_8888);
+//            Drawable d = new BitmapDrawable(getResources(), img);
+//            d.set
+//            toolbar.setLogo(d);
+        }
     }
 
 
@@ -108,7 +110,6 @@ public class DetailsActivity extends AppCompatActivity implements DetailsContrac
     @Override
     protected void onStop() {
         super.onStop();
-        disposables.clear();
         presenter.onStop();
     }
 

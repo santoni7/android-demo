@@ -74,6 +74,7 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
+        Log.d(TAG, "onBindViewHolder: " + position);
         Person p = people.get(position);
         viewHolder.bind(p, clickListener);
         viewHolderById.put(p.getId(), viewHolder);
@@ -92,7 +93,7 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
     public void clear() {
         int oldSize = people.size();
         people.clear();
-        viewHolderById.clear();
+//        viewHolderById.clear();
         lastAnimatedPosition = -1;
         notifyItemRangeRemoved(0, oldSize);
     }
@@ -147,17 +148,11 @@ public class PersonRecyclerAdapter extends RecyclerView.Adapter<PersonRecyclerAd
 
         void updateImage(Person person) {
             if (person == null) {
-                Log.e(TAG, "updateImage: person = null");
-                return;
-            }
-            if (person.getImageSource() != null) {
-                Disposable d = person.getImageSource()
-                        .subscribe(this::onBitmapReady,
-                                err -> {
-                                    //todo
-                                    Log.e(TAG, "person.getImageSource produced error: " + err);
-                                });
-                disposables.add(d);
+                Log.e(TAG, "[VH] updateImage: person = null");
+            } else if (person.getImage() == null){
+                Log.e(TAG, "[VH] updateImage: person.image = null");
+            } else {
+                onBitmapReady(person.getImage());
             }
         }
 

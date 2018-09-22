@@ -55,7 +55,7 @@ public class LocalImageDataSource implements ImageDataSource {
             }
             try {
                 Bitmap bitmap = IOUtils.loadImage(ctx, person.getImageFileName());
-                person.setImageSource(Observable.just(bitmap));
+                person.setImage(bitmap);
                 emitter.onNext(person);
                 Log.d(TAG, "Image read and passed to emitter");
             } catch (Throwable e) {
@@ -68,16 +68,17 @@ public class LocalImageDataSource implements ImageDataSource {
 
     @Override
     public void savePersonImages(Observable<Person> people) {
-        disposables.add(people.subscribe(person ->
-                person.getImageSource().subscribe(bitmap -> {
-                    Context ctx = contextWeakReference.get();
-                    if (ctx != null && bitmap != null) {
-                        IOUtils.saveImage(ctx, bitmap, person.getImageFileName());
-                    } else {
-                        Log.e(TAG, "Could not save image: Context=" + ctx + "; Bitmap=" + bitmap + "; FileName=" + person.getImageFileName());
-                    }
-                }))
-        );
+        disposables.add(people.subscribe(person -> {
+            //person.getImageSource().subscribe(bitmap -> {
+            Bitmap bitmap = person.getImage();
+            Context ctx = contextWeakReference.get();
+            if (ctx != null && bitmap != null) {
+                IOUtils.saveImage(ctx, bitmap, person.getImageFileName());
+            } else {
+                Log.e(TAG, "Could not save image: Context=" + ctx + "; Bitmap=" + bitmap + "; FileName=" + person.getImageFileName());
+            }
+            //}))
+        }));
     }
 
     @Override

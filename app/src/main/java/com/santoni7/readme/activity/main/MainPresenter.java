@@ -18,6 +18,7 @@ import javax.inject.Inject;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observables.ConnectableObservable;
 import io.reactivex.schedulers.Schedulers;
@@ -42,9 +43,10 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
 
     @Override
     public void viewReady() {
-        if (personDataSource == null || imageRepository == null) {
-            throw new IllegalStateException("Presenter must be initialized at first!");
-        }
+//        todo: Is this really needed?
+//        if (personDataSource == null || imageRepository == null) {
+//            throw new IllegalStateException("Presenter must be initialized at first!");
+//        }
         disposables.add(errors.subscribe(
                 err -> {
                     Log.e(TAG, "Error occured: " + err.toString() + "\nCaused by: " + err.getCause());
@@ -63,19 +65,24 @@ public class MainPresenter extends PresenterBase<MainContract.View> implements M
     private void requestDataUpdate(ImageRepository.SourceStrategy sourceStrategy) {
         try {
             getView().hideProgress();
-            String json = TextUtils.readStringFromStream(getView().openAssetFile(Constants.DATA_ASSET_FILENAME));
-            if (json.isEmpty()) {
-                errors.onNext(new IllegalArgumentException("Json file is empty!"));
-                return;
-            }
+//            String json = TextUtils.readStringFromStream(getView().openAssetFile(Constants.DATA_ASSET_FILENAME));
+//            if (json.isEmpty()) {
+//                errors.onNext(new IllegalArgumentException("Json file is empty!"));
+//                return;
+//            }
 
-            ConnectableObservable<Person> personObservable = personDataSource.parsePeople(json).replay();
+            ConnectableObservable<Person> personObservable = personDataSource
+                    .parsePeople(getView().openAssetFile(Constants.DATA_ASSET_FILENAME))
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .replay();
 
             disposables.add(  // Add people without images to the view as is
                     personObservable.subscribe(getView()::addPerson, errors::onNext)
             );
 
-            Observable<Person> resultPeople = imageRepository.populateWithImages(personObservable, sourceStrategy);
+            Observable<Person> resultPeople = imageRepository.populateWithImages(personObservable, sourceStrategy)
+                    .observeOn(AndroidSchedulers.mainThread());
+
             disposables.add(
                     resultPeople.subscribe(getView()::updatePerson, errors::onNext)
             );

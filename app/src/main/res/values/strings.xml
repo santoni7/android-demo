@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">Android Showcase</string>
-    <string name="main_activity_title">Android Showcase</string>
+    <string name="app_name">Showcase</string>
+    <string name="main_activity_title">Showcase</string>
     <string name="main_activity_subtitle">People list</string>
     <string name="details_activity_title">Details</string>
     <string name="details_activity_subtitle">Details</string>

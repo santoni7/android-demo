@@ -13,8 +13,8 @@ public class Person {
 
 
     private String imageFileName;
-    private Observable<Bitmap> imageSource;
-
+//    private Observable<Bitmap> imageSource;
+    private Bitmap image;
     public Person() {
 
     }
@@ -23,7 +23,7 @@ public class Person {
 
     @Override
     public String toString() {
-        return String.format("{id: %s, full_name: %s, avatar_url: %s, image_source: %s}", id, getFullName(), avatarUrl, imageSource);
+        return String.format("{id: %s, full_name: %s, avatar_url: %s, image_source: %s}", id, getFullName(), avatarUrl, image);
     }
 
 
@@ -79,11 +79,11 @@ public class Person {
         this.imageFileName = imageFileName;
     }
 
-    public Observable<Bitmap> getImageSource() {
-        return imageSource;
+    public Bitmap getImage() {
+        return image;
     }
 
-    public void setImageSource(Observable<Bitmap> imageSource) {
-        this.imageSource = imageSource;
+    public void setImage(Bitmap image) {
+        this.image = image;
     }
 }

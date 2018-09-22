@@ -37,7 +37,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop"
-                    card_view:srcCompat="@color/cardview_light_background" />
+                    android:background="@color/cardview_dark_background"/>
 
 
                 <ProgressBar
@@ -45,7 +45,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:indeterminate="true"
-                    android:padding="12dp"
+                    android:padding="16dp"
                     android:visibility="visible" />
             </FrameLayout>
 
